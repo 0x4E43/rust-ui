@@ -4,16 +4,11 @@ use crossterm::{
     ExecutableCommand,
 };
 use ratatui::{
-    layout::Alignment,
-    prelude::{CrosstermBackend, Stylize, Terminal},
-    style::{Color, Style, Styled},
-    text::Text,
-    widgets::{Block, Borders, Paragraph, Wrap},
+    layout::Alignment, prelude::{CrosstermBackend, Stylize, Terminal}, symbols::border, text::{Line, Text}, widgets::{block::{Position, Title}, Block, Borders, Paragraph}, Frame
 };
-use std::{
-    fmt::format,
-    io::{stdout, Result},
-};
+use std::
+    io::{stdout, Result}
+;
 
 fn main() -> Result<()> {
     stdout().execute(EnterAlternateScreen)?;
@@ -23,23 +18,10 @@ fn main() -> Result<()> {
 
     // TODO main loop
     let mut counter = 0;
+
     loop {
-        let counter_text = Text::styled(format!("{}", counter), Style::default().fg(Color::Red));
         terminal.draw(|frame| {
-            let area = frame.size();
-            frame.render_widget(
-                Paragraph::new(Text::from(format!("Value: {}", counter_text)))
-                    .block(
-                        Block::new()
-                            .title("Counter App Tutorial")
-                            .style(Style::new().bold())
-                            .borders(Borders::ALL),
-                    )
-                    .alignment(Alignment::Center)
-                    .on_black()
-                    .wrap(Wrap { trim: true }),
-                area,
-            );
+            render(frame, counter)
         })?;
         if event::poll(std::time::Duration::from_millis(16))? {
             if let event::Event::Key(key) = event::read()? {
@@ -62,4 +44,38 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn draw_ui() {}
+fn render(frame: &mut Frame, counter : i32) {
+        let area =  frame.size();
+
+        let title = Title::from(" Counter App Tutorial ".bold());
+        let instructions = Title::from(Line::from(vec![
+            " Decrement ".into(),
+            "<Left>".blue().bold(),
+            " Increment ".into(),
+            "<Right>".blue().bold(),
+            " Quit ".into(),
+            "<Q> ".blue().bold(),
+        ]));
+        let block = Block::default()
+            .title(title.alignment(Alignment::Center))
+            .title(
+                instructions
+                    .alignment(Alignment::Center)
+                    .position(Position::Bottom),
+            )
+            .borders(Borders::ALL)
+            .border_set(border::THICK);
+
+        let counter_text = Text::from(vec![Line::from(vec![
+            "Value: ".into(),
+            counter.to_string().yellow(),
+        ])]);
+
+        
+        frame.render_widget(
+            Paragraph::new(counter_text)
+                .centered()
+                .block(block),
+            area
+        )
+    }
